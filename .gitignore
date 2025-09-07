@@ -1,0 +1,56 @@
+# -------------------------
+# Node.js / Express / Next.js
+# -------------------------
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# dotenv files (keep secrets out of GitHub)
+.env
+.env.*.local
+
+# editor / system junk
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# -------------------------
+# Flutter / Dart
+# -------------------------
+**/build/
+.dart_tool/
+.packages
+.pub-cache/
+pubspec.lock
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework/
+ios/Flutter/Flutter.podspec
+
+# Android
+android/.gradle/
+android/app/build/
+*.iml
+
+# -------------------------
+# Docker
+# -------------------------
+/mongo_data/
+docker-compose.override.yml
+
+# -------------------------
+# Misc
+# -------------------------
+*.tmp
+*.bak
