@@ -40,6 +40,7 @@ router.post('/register', validate(registerBody), asyncHandler(async (req, res) =
 }));
 
 // POST /auth/login
+// backend/src/routes/auth.routes.ts
 router.post('/login', validate(loginBody), asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
@@ -49,9 +50,20 @@ router.post('/login', validate(loginBody), asyncHandler(async (req, res) => {
   if (!ok) return res.status(400).json({ error: 'InvalidCredentials' });
 
   const token = signToken({ sub: String(user._id), username: user.username, role: user.role });
-  res.cookie('token', token, cookieOpts);
-  res.json({ ok: true, username: user.username, role: user.role });
+
+  // keep cookie (works in Insomnia etc.)
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false, // true in prod/HTTPS
+    path: '/',
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+
+  // ⬅︎ NEW: also return token so the web app can use Authorization header
+  res.json({ ok: true, username: user.username, role: user.role, token });
 }));
+
 
 // GET /auth/me
 router.get('/me', requireAuth, asyncHandler(async (_req, res) => {

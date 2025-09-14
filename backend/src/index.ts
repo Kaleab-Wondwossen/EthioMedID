@@ -6,6 +6,7 @@ import patientRoutes from './routes/patient.routes';
 import certificateRoutes from './routes/certificate.routes';
 import authRoutes from './routes/auth.routes';
 import { requireAuth } from './auth/requireAuth';
+import recordRoutes from './routes/record.routes';
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.use('/auth', authRoutes);
 // protected routes (require login)
 app.use('/patients', requireAuth, patientRoutes);
 app.use('/certificates', requireAuth, certificateRoutes);
+
+app.use('/records', requireAuth, recordRoutes);
 
 // 404 + error handlers ... (keep what you already have)
 

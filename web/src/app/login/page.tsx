@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { setToken } from '@/lib/session';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('doc1');
@@ -12,16 +13,17 @@ export default function LoginPage() {
   async function login() {
     try {
       setErr(null);
-      await api<{ ok: true }>('/auth/login', {
+      // Expect token from backend
+      const data = await api<{ ok: true; token: string }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
-      router.push('/patients'); // go to protected page
+      setToken(data.token);      // ✅ save JWT in localStorage
+      router.push('/patients');  // redirect to protected page
     } catch (e: unknown) {
-  const msg = e instanceof Error ? e.message : String(e);
-  setErr(msg);
-}
-
+      const msg = e instanceof Error ? e.message : String(e);
+      setErr(msg);
+    }
   }
 
   return (
