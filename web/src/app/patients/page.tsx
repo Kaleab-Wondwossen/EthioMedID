@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
 type Patient = {
   _id: string;
@@ -29,6 +30,18 @@ export default function PatientsPage() {
   const [name, setName] = useState('');
   const [search, setSearch] = useState('');
 
+  // ✅ Auth guard: redirect to /login if not authenticated
+  useEffect(() => {
+    (async () => {
+      try {
+        await api('/auth/me'); // throws if 401
+      } catch {
+        router.push('/login');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Pagination from URL
   const page = Number(searchParams.get('page') || 1);
   const limit = Number(searchParams.get('limit') || 5);
@@ -42,6 +55,14 @@ export default function PatientsPage() {
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
     return `${API}/patients${suffix}`;
   }, [search, page, limit]);
+
+  async function logout() {
+  try {
+    await api('/auth/logout', { method: 'POST' });
+    router.push('/login');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) { /* ignore */ }
+}
 
   async function load() {
     const res = await fetch(fetchUrl, { cache: 'no-store' });
@@ -146,6 +167,7 @@ export default function PatientsPage() {
           <button onClick={() => go(page + 1)} disabled={page >= totalPages}>
             Next
           </button>
+          <button onClick={logout}>Logout</button>
         </div>
       )}
     </main>
