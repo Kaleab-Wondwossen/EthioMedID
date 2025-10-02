@@ -13,10 +13,11 @@ export interface PatientDoc extends Document {
 const PatientSchema = new Schema<PatientDoc>(
   {
     patientId: { type: String, required: true, unique: true, index: true },
-    name:      { type: String, required: true },
-    phone:     { type: String },
-    dob:       { type: Date },
-    sex:       { type: String, enum: ['male', 'female', 'other'] }
+    name: { type: String, required: true },
+    phone: { type: String, index: true, unique: false },// set unique: true if you want hard uniqueness
+
+    dob: { type: Date },
+    sex: { type: String, enum: ['male', 'female', 'other'] }
   },
   { timestamps: true }
 );

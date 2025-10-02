@@ -11,6 +11,8 @@ export interface CertificateDoc extends Document {
   revokedAt?: Date;
   hash?: string;                 // PDF hash (for later)
   url?: string;                  // S3 link (for later)
+  verifyCode?: string;           // e.g. “X7K9-3T”
+  qrPayload?: string;            // e.g. https://yourdomain/verify?code=...
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,7 +26,12 @@ const CertificateSchema = new Schema<CertificateDoc>({
   revokedAt:     { type: Date },
   hash:          { type: String },
   url:           { type: String },
+
+  // NEW ↓
+  verifyCode:    { type: String, unique: true, sparse: true },   // e.g. “X7K9-3T”
+  qrPayload:     { type: String }                                 // e.g. https://yourdomain/verify?code=...
 }, { timestamps: true });
+
 
 export const Certificate: Model<CertificateDoc> =
   mongoose.models.Certificate || mongoose.model<CertificateDoc>('Certificate', CertificateSchema);

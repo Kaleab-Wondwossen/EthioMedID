@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { Patient } from '../models/patient.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { validate } from '../utils/validate';
+import { requireAuth } from '../auth/requireAuth';
+import { requireSelfOrRole } from '../auth/requireSelfOrRole';
 
 const router = Router();
 
@@ -39,8 +41,28 @@ router.get('/', validate(qSchema, 'query'), asyncHandler(async (req, res) => {
   res.json({ items, total, page, limit });
 }));
 
+router.get('/:patientId',
+  (req, _res, next) => { console.log('→ hit /patients/:patientId', req.params.patientId); next(); },
+
+  // If you added a self/role guard, keep it here:
+  requireAuth, requireSelfOrRole('clinician'),
+
+  validate(idParam, 'params'),
+
+  asyncHandler(async (_req, res) => {
+    console.log('→ validated params');
+    const { patientId } = (res.locals as any).__validated.params;
+    console.log('→ about to query', patientId);
+    const doc = await Patient.findOne({ patientId }).lean();
+    console.log('→ query finished, found?', !!doc);
+    if (!doc) return res.status(404).json({ error: 'NotFound' });
+    res.json(doc);
+  })
+);
+
+
 // GET /patients/:patientId
-router.get('/:patientId', validate(idParam, 'params'), asyncHandler(async (_req, res) => {
+router.get('/:patientId',   validate(idParam, 'params'), asyncHandler(async (_req, res) => {
   const { patientId } = (res.locals as any).__validated.params as { patientId: string };
   const doc = await Patient.findOne({ patientId }).lean();
   if (!doc) return res.status(404).json({ error: 'NotFound' });

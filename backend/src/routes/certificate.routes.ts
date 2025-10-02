@@ -4,6 +4,8 @@ import { Certificate } from '../models/certificate.model';
 import { Patient } from '../models/patient.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { validate } from '../utils/validate';
+import { requireAuth } from '../auth/requireAuth';
+import { requireSelfOrRole } from '../auth/requireSelfOrRole';
 
 const router = Router();
 
@@ -32,6 +34,8 @@ const updateBody = z.object({
 // GET /certificates → paginated list
 router.get(
   '/',
+  requireAuth,
+  requireSelfOrRole('clinician'),
   validate(listQ, 'query'),
   asyncHandler(async (_req, res) => {
     const qv = (res.locals as any).__validated?.query as {

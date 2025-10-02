@@ -13,6 +13,8 @@ import certificateRoutes from './routes/certificate.routes';
 import authRoutes from './routes/auth.routes';
 import recordRoutes from './routes/record.routes';
 import { requireAuth } from './auth/requireAuth';
+import verifyRoutes from './routes/verify.routes';
+
 
 const app = express();
 
@@ -43,6 +45,8 @@ app.use('/auth', authRoutes);
 app.use('/patients', requireAuth, patientRoutes);
 app.use('/certificates', requireAuth, certificateRoutes);
 app.use('/records', requireAuth, recordRoutes);
+app.use('/verify', verifyRoutes);
+
 
 // 404 fallback
 app.use((_req, res) => {

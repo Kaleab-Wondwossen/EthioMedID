@@ -5,7 +5,8 @@ import { Patient } from '../models/patient.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { validate } from '../utils/validate';
 import { schemaByType, RecordType } from '../utils/recordSchemas';
-import { requireRole } from '../auth/requireAuth';
+import { requireAuth, requireRole } from '../auth/requireAuth';
+import { requireSelfOrRole } from '../auth/requireSelfOrRole';
 
 const router = Router();
 
@@ -15,9 +16,9 @@ const qSchema = z.object({
   type: z.string().optional(),         // one type
   tag: z.string().optional(),          // single tag
   from: z.string().datetime().optional(),
-  to:   z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
   page: z.string().transform(Number).pipe(z.number().int().gte(1)).optional(),
-  limit:z.string().transform(Number).pipe(z.number().int().gte(1).lte(100)).optional(),
+  limit: z.string().transform(Number).pipe(z.number().int().gte(1).lte(100)).optional(),
 });
 
 const idParam = z.object({ recordId: z.string().min(1) });
@@ -39,22 +40,22 @@ const updateBody = z.object({
 });
 
 // GET /records?patientId=...&type=...&page=1&limit=20
-router.get('/', validate(qSchema, 'query'), asyncHandler(async (_req, res) => {
+router.get('/', requireAuth, requireSelfOrRole('clinician'), validate(qSchema, 'query'), asyncHandler(async (_req, res) => {
   const qv = (res.locals as any).__validated.query as z.infer<typeof qSchema>;
-  const page  = qv.page ?? 1;
+  const page = qv.page ?? 1;
   const limit = qv.limit ?? 20;
 
   const query: any = { patientId: qv.patientId, deletedAt: null };
   if (qv.type) query.type = qv.type;
-  if (qv.tag)  query.tags = qv.tag;
+  if (qv.tag) query.tags = qv.tag;
   if (qv.from || qv.to) {
     query.effectiveAt = {};
     if (qv.from) (query.effectiveAt as any).$gte = new Date(qv.from);
-    if (qv.to)   (query.effectiveAt as any).$lte = new Date(qv.to);
+    if (qv.to) (query.effectiveAt as any).$lte = new Date(qv.to);
   }
 
   const [items, total] = await Promise.all([
-    Record.find(query).sort({ effectiveAt: -1, createdAt: -1 }).skip((page-1)*limit).limit(limit).lean(),
+    Record.find(query).sort({ effectiveAt: -1, createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Record.countDocuments(query),
   ]);
 
