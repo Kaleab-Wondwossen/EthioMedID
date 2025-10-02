@@ -6,6 +6,8 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { validate } from '../utils/validate';
 import { requireAuth } from '../auth/requireAuth';
 import { requireSelfOrRole } from '../auth/requireSelfOrRole';
+import { makeVerifyCode } from '../utils/codes';
+import { buildVerifyUrl } from '../utils/urls';
 
 const router = Router();
 
@@ -18,13 +20,13 @@ const listQ = z.object({
 const createBody = z.object({
   certificateId: z.string().min(1),
   patientId: z.string().min(1),
-  type: z.enum(['DrivingLicenceMedical','ImmigrationMedical']),
+  type: z.enum(['DrivingLicenceMedical', 'ImmigrationMedical']),
 });
 
 const idParam = z.object({ certificateId: z.string().min(1) });
 
 const updateBody = z.object({
-  status: z.enum(['DRAFT','SIGNED','REVOKED']).optional(),
+  status: z.enum(['DRAFT', 'SIGNED', 'REVOKED']).optional(),
   url: z.string().url().optional(),
   hash: z.string().optional(),
   issuedAt: z.coerce.date().optional(),
@@ -68,7 +70,7 @@ router.get('/', validate(listQ, 'query'), asyncHandler(async (req, res) => {
   const { patientId, page = 1, limit = 20 } = req.query as any;
   const q: any = patientId ? { patientId } : {};
   const [items, total] = await Promise.all([
-    Certificate.find(q).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit).lean(),
+    Certificate.find(q).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Certificate.countDocuments(q),
   ]);
   res.json({ items, total, page, limit });
@@ -96,6 +98,16 @@ router.post('/', validate(createBody), asyncHandler(async (req, res) => {
   if (!patient) return res.status(400).json({ error: 'PatientNotFound' });
 
   const doc = await Certificate.create({ ...req.body, status: 'DRAFT' });
+  // If no verify code, generate one
+  if (!doc.verifyCode) {
+    const code = makeVerifyCode();
+    const qr = buildVerifyUrl(code);
+    doc.verifyCode = code;
+    doc.qrPayload = qr;
+    await doc.save();
+  }
+  res.status(201).json(doc);
+
   res.status(201).json(doc);
 }));
 
@@ -107,6 +119,14 @@ router.put('/:certificateId', validate(idParam, 'params'), validate(updateBody),
   // auto-set times if status transitions
   if (update.status === 'SIGNED' && !update.issuedAt) update.issuedAt = new Date();
   if (update.status === 'REVOKED' && !update.revokedAt) update.revokedAt = new Date();
+  // If signing for the first time, ensure code exists
+  if (req.body.status === 'SIGNED') {
+    const existing = await Certificate.findOne({ certificateId }).lean();
+    if (existing && !existing.verifyCode) {
+      update.verifyCode = makeVerifyCode();
+      update.qrPayload = buildVerifyUrl(update.verifyCode);
+    }
+  }
 
   const doc = await Certificate.findOneAndUpdate({ certificateId }, update, { new: true }).lean();
   if (!doc) return res.status(404).json({ error: 'NotFound' });
