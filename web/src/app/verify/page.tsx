@@ -68,6 +68,7 @@ export default function VerifyPage() {
       const normalized = text.trim().toUpperCase();
       setCode(normalized);
       void handleVerify(normalized);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_e) {
       setErr('Clipboard permission denied. Paste with ⌘/Ctrl+V.');
     }

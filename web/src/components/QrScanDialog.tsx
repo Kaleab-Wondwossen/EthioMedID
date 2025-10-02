@@ -12,6 +12,7 @@ type Props = {
 export default function QrScanDialog({ open, onClose, onResult }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [scanner, setScanner] = useState<Html5Qrcode | null>(null);
 
   useEffect(() => {
